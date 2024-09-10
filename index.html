@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Capture</title>
+    <style>
+        #video {
+            width: 100%;
+            height: auto;
+            border: 1px solid black;
+        }
+        #canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="view_photos.php">view_photos.php</a>
+    <h1>Capture Photo</h1>
+    <video id="video" autoplay></video>
+    <button id="capture">Capture Photo</button>
+    <canvas id="canvas"></canvas>
+    <img id="photo" alt="Captured Photo" style="display:none;" />
+
+    <!-- Added Form for Upload -->
+    <form id="uploadForm" action="upload.php" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="MAX_FILE_SIZE" value="5000000" />
+        <input type="file" id="hiddenFileInput" name="photo" style="display:none;" />
+        <button type="submit" id="upload">Upload Photo</button>
+    </form>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const photo = document.getElementById('photo');
+        const captureButton = document.getElementById('capture');
+        const uploadButton = document.getElementById('upload');
+        const uploadForm = document.getElementById('uploadForm');
+        const hiddenFileInput = document.getElementById('hiddenFileInput');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(error => {
+                console.error('Error accessing camera: ', error);
+            });
+
+        captureButton.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            photo.src = canvas.toDataURL('image/png');
+            photo.style.display = 'block';
+
+            // Prepare file for upload
+            canvas.toBlob(blob => {
+                const file = new File([blob], 'photo.png', { type: 'image/png' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                hiddenFileInput.files = dataTransfer.files;
+            });
+        });
+
+        uploadForm.addEventListener('submit', (event) => {
+            if (hiddenFileInput.files.length === 0) {
+                event.preventDefault();
+                alert('Please capture a photo before uploading.');
+            }
+        });
+    </script>
+</body>
+</html>
